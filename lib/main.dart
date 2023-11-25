@@ -7,7 +7,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -37,11 +36,13 @@ class _MyHomePageState extends State<MyHomePage> {
   void _getStartingOffset(DragStartDetails details){
     setState(() {
       starting = details.globalPosition;
+      ending = starting; // Initialize ending with starting
     });
   }
-  void _getEndingOffset(DragEndDetails details){
+
+  void _getEndingOffset(DragUpdateDetails details){
     setState(() {
-      ending = details.velocity.pixelsPerSecond;
+      ending = details.globalPosition;
     });
   }
 
@@ -50,20 +51,18 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       body: GestureDetector(
         onPanStart: _getStartingOffset,
-        onPanEnd: _getEndingOffset,
+        onPanUpdate: _getEndingOffset, // Changed to onPanUpdate
         child: Center(
-          child: CustomPaint(
-            painter: MyPainter(starting: starting, ending: ending),
-            child: const FittedBox(
-              child: Text("Hello there"),
-            ),
-          )
+            child: CustomPaint(
+              painter: MyPainter(starting: starting, ending: ending),
+              child: const FittedBox(
+                child: Text("Hello there"),
+              ),
+            )
         ),
       ),
     );
   }
-
-
 }
 
 class MyPainter extends CustomPainter {
@@ -73,17 +72,15 @@ class MyPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-  final painter = Paint()
-    ..color = Colors.indigo
-    ..style = PaintingStyle.stroke
-  ..strokeWidth = 10.5;
-  canvas.drawLine(starting, ending,painter);
-}
+    final painter = Paint()
+      ..color = Colors.indigo
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 10.5;
+    canvas.drawLine(starting, ending, painter);
+  }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     return true;
   }
 }
-
-
