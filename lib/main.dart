@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 void main() {
@@ -5,82 +7,109 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  Offset starting = Offset.zero;
-  Offset ending = Offset.zero;
+  List<CircleData> circles = [];
 
-  void _getStartingOffset(DragStartDetails details){
+  void _addCircle(CircleData circle) {
     setState(() {
-      starting = details.globalPosition;
-      ending = starting; // Initialize ending with starting
+      circles.add(circle);
     });
   }
-
-  void _getEndingOffset(DragUpdateDetails details){
+  void _clear() {
     setState(() {
-      ending = details.globalPosition;
+      circles.clear();
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: GestureDetector(
-        onPanStart: _getStartingOffset,
-        onPanUpdate: _getEndingOffset, // Changed to onPanUpdate
-        child: Center(
-            child: CustomPaint(
-              painter: MyPainter(starting: starting, ending: ending),
-              child: const FittedBox(
-                child: Text("Hello there"),
+      appBar: AppBar(
+        title: const Text('Circle Drawing App'),
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onPanStart: (details) {
+                _addCircle(CircleData(center: details.globalPosition, radius: 0));
+              },
+              onPanUpdate: (details) {
+                int lastIndex = circles.length - 1;
+                if (lastIndex >= 0) {
+                  double distance = _calculateDistance(circles[lastIndex].center, details.globalPosition);
+                  circles[lastIndex] = CircleData(center: circles[lastIndex].center, radius: distance);
+                  setState(() {});
+                }
+              },
+              child: Center(
+                child: CustomPaint(
+                  painter: CirclePainter(circles: circles),
+                  child: const SizedBox.expand(),
+                ),
               ),
-            )
-        ),
+            ),
+          ),
+            ElevatedButton(onPressed: _clear, child: const Text("Clear"))
+        ],
       ),
     );
   }
+
+  double _calculateDistance(Offset point1, Offset point2) {
+    double dx = point2.dx - point1.dx;
+    double dy = point2.dy - point1.dy;
+    return sqrt(dx * dx + dy * dy);
+  }
 }
 
-class MyPainter extends CustomPainter {
-  Offset starting;
-  Offset ending;
-  MyPainter({required this.starting,required this.ending});
+class CirclePainter extends CustomPainter {
+  final List<CircleData> circles;
+
+  CirclePainter({required this.circles});
 
   @override
   void paint(Canvas canvas, Size size) {
     final painter = Paint()
       ..color = Colors.indigo
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 10.5;
-    canvas.drawLine(starting, ending, painter);
+      ..strokeWidth = 2.0;
+
+    for (var circle in circles) {
+      canvas.drawCircle(circle.center, circle.radius, painter);
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+  bool shouldRepaint(CustomPainter oldDelegate) {
     return true;
   }
+}
+
+class CircleData {
+  final Offset center;
+  final double radius;
+
+  CircleData({required this.center, required this.radius});
 }
